@@ -1,0 +1,85 @@
+-----------------------------------------------------
+***Loaded assemblies. for Current AppDomain: 
+-----------------------------------------------------
+mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+TestPlugInLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+-----------------------------------------------------
+$$$Loading PlugIns...
+Reading config file for Good
+Reading config file for Bad
+Reading config file for Ugly
+$$$Loaded PlugIns.
+-----------------------------------------------------
+***Loaded assemblies for Current AppDomain: 
+-----------------------------------------------------
+mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+TestPlugInLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+-----------------------------------------------------
+Enter to continue
+-----------------------------------------------------
+Loadded Assemblies  for Sample1PlugIn: AppDomain.
+-----------------------------------------------------
+mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Sample1PlugIn, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+System.Configuration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+-----------------------------------------------------
+-----------------------------------------------------
+Loadded Assemblies  for Sample2PlugIn: AppDomain.
+-----------------------------------------------------
+mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Sample2PlugIn, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+System.Configuration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+-----------------------------------------------------
+-----------------------------------------------------
+Loadded Assemblies  for Sample3PlugIn: AppDomain.
+-----------------------------------------------------
+mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+Sample3PlugIn, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+System, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+System.Configuration, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
+System.Xml, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+-----------------------------------------------------
+$$$Calling PlugIn methods.
+The name is: Sample1PlugIn
+The name is: Sample2PlugIn
+The name is: Sample3PlugIn
+Sample1PlugIn Initializing...
+Sample2PlugIn Initializing...
+Sample3PlugIn Initializing...
+Sample1PlugIn Execute...
+Sample2PlugIn Execute...
+Sample3PlugIn Execute...
+Enter to continue
+$$$Unloading PlugIns...
+$$$PlugIns unloaded.
+-----------------------------------------------------
+***Loaded assemblies for Current AppDomain: 
+-----------------------------------------------------
+mscorlib, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+TestPlugInLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInLoader, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+PlugInInterfaces, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null
+System.Core, Version=3.5.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089
+-----------------------------------------------------
+!!!Calling PlugIn methods after have been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+The target application domain has been unloaded.
+Enter to continue
