@@ -1,1 +1,188 @@
 http://www.softwareinteractions.com/blog/2010/2/7/loading-and-unloading-net-assemblies.html
+
+Loading and Unloading .Net assemblies
+
+ DateSunday, February 7, 2010 at 5:17PM
+Two of the most common design patterns used for application extension are scripting and a plugin framework.  
+In this article I will explore the latter.  PlugIn interfaces enables third party developers to extend your applications 
+and in some instances create a whole new application.  
+
+Most plugin frameworks have the option to load plugins at runtime and on demand.  
+This is great but sometimes it is necessary to unload the plugin for various reasons.  
+The reasons an application may need to unload plugins are the following: the plugin is consuming too many resources or 
+has not been invoked (used) within some specified time.  Loading an assembly in .Net is very easy to do and for the 
+most part does not require much complexity in your plugin design. But unloading a .Net assembly raises the 
+complexity of your design.  In this article I will implement a plugin framework designed for loading and unloading 
+.Net assemblies.
+
+ 
+
+In the code fragment shown below I define a simple interface that must be implemented by the plugin implementor. 
+This interface is very minimalistic but it will allow me to demonstrate the loading, unloading of the assembly and 
+also executing plugin specific code.
+ 
+
+   1:      public interface IPlugIn
+   2:      {
+   3:          string Name { get; }
+   4:          void Initialize();
+   5:          void Shutdown();
+   6:          void Execute();
+   7:          void PrintLoadedAssemblies(string message);
+   8:      }
+ 
+
+Now, in order for the application to be able to unload the plugin it must first load the plugin assembly in a separate .Net
+Application Domain. Loading the assembly in a separate application domain will enable the plugin to have its own 
+configuration file and it will decouple the plugin from the rest of the application. To be able to load and instantiate 
+an object of type IPlugIn it is required that the class that implements the IPlugIn interface also inherit from the .Net 
+class MarshalByRefObject. The reason it must inherit from MarshalByRefObject is because it is going to be accessed from 
+the main application domain. For this cross domain constraint all the same design contraints that exist in an application 
+that uses the Remoting API, also applies in this case. Therefore to make things simpler, I define an abstract class that 
+inherits from MarshalByRefObject and implement the IPlugIn interface.
+ 
+
+   1:      public abstract class PlugIn : MarshalByRefObject, IPlugIn
+   2:      {
+   3:          #region IPlugIn Members
+   4:          public abstract string Name {get;}
+   5:          public abstract void Initialize();
+   6:          public abstract void Shutdown();
+   7:          public abstract void Execute();
+   8:          #endregion
+   9:      }
+ 
+
+ 
+
+   1:      [Serializable]
+   2:      [AttributeUsageAttribute(AttributeTargets.Assembly, Inherited = false, AllowMultiple = false)]
+   3:      sealed public class PlugInAttribute : Attribute
+   4:      {
+   5:          public string PlugInName { get; private set; }
+   6:          public string EntryType { get; private set; }        
+   7:          public PlugInAttribute(string pluginName, string entryType)
+   8:          {
+   9:              PlugInName = pluginName;
+  10:              EntryType = entryType;
+  11:          }
+  12:      }
+ 
+
+Once the plugin developer implements the abstract class PlugIn, he must add an assembly attribute somewhere in the plugin 
+assembly, the most obvious place being be AssemblyInfo.cs file.
+ 
+
+[assembly: PlugInAttribute("Sample1PlugIn", "BoTechnologies.PlugIn.Sample1PlugIn")]
+ 
+
+This line of code tells the PlugInLoader that the assembly is a plugin, the plugin name is "Sample1PlugIn" and that the 
+entry class (the class that inherits from the PlugIn or implements IPlugIn) is of type 
+name "BoTechnologies.PlugIn.Sample1PlugIn". The PlugInLoader method GetAssemblyNames will create a temporary app domain 
+and load each assembly it finds in its executable path. It will create an instance of LoadAssemblyAttributesProxy and 
+query for the assembly attribute. If the assembly attribute exists it then knows that the assembly is a plugin assembly. 
+Once it verifies that it is a plugin assembly it saves the attribute in a list of PlugInAttributes. This information will 
+be used later by the loader to create an instance of the entry class.
+ 
+
+   1:      public class LoadAssemblyAttributesProxy : MarshalByRefObject
+   2:      {
+   3:          public LoadAssemblyAttributesProxy () { }
+   4:          public PlugInAttribute[] LoadAssemblyAttributes(string assFile)
+   5:          {
+   6:              Assembly asm = Assembly.LoadFrom(assFile);
+   7:              PlugInAttribute[] plugInAttribute = asm.GetCustomAttributes(typeof(PlugInAttribute), false) as PlugInAttribute[];
+   8:              return plugInAttribute;
+   9:          }
+  10:      }
+ 
+
+The class PlugInLoader iterates through the list of PlugInAttribute and invokes CreateAppDomain(PlugInAttribute) method. 
+This method creates an AppDomainSetup object, sets the name to the plugin name and sets the ConfigurationFile property to 
+the plugin's ".config" file (i.e. PlugInName.config.dll) and finally creates the application domain. Once the application 
+domain is created it adds it to a dictionary of pluginInfo to appDomain objects and returns. The PlugInLoader invokes the 
+InstantiatePlugIn(PlugInAttribute) method. In this method the entry class is instantiated in its corresponding appDomain 
+by invoking appDomain.CreateInstanceAndUnwrap method. This method will return a proxy object to the entry class and is 
+casted to IPlugIn and added to a dictionary of plugInInfo to plugIn instance.
+ 
+
+   1:  public class PlugInLoader
+   2:  {
+   3:     Dictionary<PlugInAttribute, AppDomain> _appDomains = new Dictionary<PlugInAttribute,
+   4:                                                                          AppDomain>();
+   5:     Dictionary<PlugInAttribute, IPlugIn> _plugIns = new Dictionary<PlugInAttribute,
+   6:                                                                  IPlugIn>();
+   7:     List<PlugInAttribute> _plugInsInfo = new List<PlugInAttribute>();
+   8:     List<string> _assemblyNames = new List<string>();
+   9:     public List<IPlugIn> PlugIns { get { return _plugIns.Values.ToList();} }
+  10:     public PlugInLoader() { }
+  11:     public void LoadAllPlugIns()
+  12:     {
+  13:         GetAssemblyNames();
+  14:         _plugInsInfo.ForEach(CreateAppDomain);
+  15:         _plugInsInfo.ForEach(InstantiatePlugIn);
+  16:     }
+  17:     public void UnloadAllPlugins()
+  18:     {
+  19:         _plugInsInfo.ForEach(UnLoadAppDomain);            
+  20:     }
+  21:     private void GetAssemblyNames()
+  22:     {
+  23:         string[] fileNames = Directory.GetFiles(Environment.CurrentDirectory, "*.dll", 
+  24:                                                 SearchOption.AllDirectories);     
+  25:         AppDomainSetup domainSetup = new AppDomainSetup();
+  26:         domainSetup.ApplicationName = "TempDomain";
+  27:         var tempAppDomain = AppDomain.CreateDomain("TempDomain",
+  28:                                AppDomain.CurrentDomain.Evidence, domainSetup);
+  29:         foreach (var file in fileNames)
+  30:         {
+  31:             LoadAssemblyAttributesProxy proxy = tempAppDomain.CreateInstanceAndUnwrap(
+  32:                                     "PlugInInterfaces", 
+  33:                                     typeof(LoadAssemblyAttributesProxy).FullName)  
+  34:                                      as LoadAssemblyAttributesProxy;
+  35:             var plugInAttribute = proxy.LoadAssemblyAttributes(file);
+  36:             if (plugInAttribute.Length > 0)
+  37:             {
+  38:                 _plugInsInfo.Add(plugInAttribute[0]);
+  39:             }
+  40:             AppDomain.Unload(tempAppDomain);
+  41:         }
+  42:     }        
+  43:     private void CreateAppDomain(PlugInAttribute plugInInfo)
+  44:     {
+  45:         AppDomainSetup domainSetup = new AppDomainSetup();
+  46:         domainSetup.ApplicationName = plugInInfo.PlugInName;
+  47:         domainSetup.ConfigurationFile = plugInInfo.PlugInName + ".dll.config";
+  48:         domainSetup.ApplicationBase = AppDomain.CurrentDomain.BaseDirectory;
+  49:         var appDomain = AppDomain.CreateDomain(domainSetup.ApplicationName,
+  50:                               AppDomain.CurrentDomain.Evidence, domainSetup);
+  51:         _appDomains.Add(plugInInfo, appDomain);
+  52:     }       
+  53:     private void InstantiatePlugIn(PlugInAttribute plugInInfo)
+  54:     {
+  55:         var appDomain = _appDomains[plugInInfo];
+  56:         IPlugIn plugIn = appDomain.CreateInstanceAndUnwrap(plugInInfo.PlugInName,
+  57:   plugInInfo.EntryType) as IPlugIn;
+  58:         _plugIns.Add(plugInInfo, plugIn);
+  59:     }
+  60:     private void UnLoadAppDomain(PlugInAttribute plugInInfo)
+  61:     {
+  62:         AppDomain.Unload(_appDomains[plugInInfo]);
+  63:         _appDomains.Remove(plugInInfo);
+  64:     }
+  65:  }
+ 
+
+In the test application I iterate through the list of plugins and invoke the IPlugIn methods implemented by the plugin
+entry class.
+ 
+
+   1:  List<IPlugIn> plugIns = loader.PlugIns;
+   2:  plugIns.ForEach(plugin => plugin.PrintLoadedAssemblies("Loadded Assemblies "));
+   3:  Console.WriteLine("$$$Calling PlugIn methods.");
+   4:  plugIns.ForEach(plugin => Console.WriteLine("The name is: " + plugin.Name));
+   5:  plugIns.ForEach(plugin => plugin.Initialize());
+   6:  plugIns.ForEach(plugin => plugin.Execute());
+ 
+
+That's it!
