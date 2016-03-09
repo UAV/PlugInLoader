@@ -1,8 +1,6 @@
-http://www.softwareinteractions.com/blog/2010/2/7/loading-and-unloading-net-assemblies.html
 
 Loading and Unloading .Net assemblies
 
- DateSunday, February 7, 2010 at 5:17PM
 Two of the most common design patterns used for application extension are scripting and a plugin framework.  
 In this article I will explore the latter.  PlugIn interfaces enables third party developers to extend your applications 
 and in some instances create a whole new application.  
